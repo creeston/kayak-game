@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "vite": "^6.2.0"
+  },
+  "devDependencies": {
+    "@babylonjs/core": "^7.50.0",
+    "@babylonjs/inspector": "^7.50.0",
+    "@babylonjs/materials": "^7.50.0",
+    "@babylonjs/procedural-textures": "^7.50.0"
+  }
+}
