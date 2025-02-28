@@ -6,6 +6,7 @@
     "@babylonjs/core": "^7.50.0",
     "@babylonjs/inspector": "^7.50.0",
     "@babylonjs/materials": "^7.50.0",
-    "@babylonjs/procedural-textures": "^7.50.0"
+    "@babylonjs/procedural-textures": "^7.50.0",
+    "gh-pages": "^6.3.0"
   }
 }
