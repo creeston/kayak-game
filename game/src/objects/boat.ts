@@ -8,7 +8,7 @@ export class Boat {
             { width: boathWidth, height: 1, depth: boatLength },
             scene
         );
-        this.speed = 0.1;
+        this.speed = 0.3;
     }
 
     setSpeed(speed: number) {
