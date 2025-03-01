@@ -1,8 +1,9 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import { Engine, Scene, Vector3, HemisphericLight } from "@babylonjs/core";
-import { RiverGeodataParser } from "./utils/riverGeodataParser";
+import { GeodataConverter } from "./utils/geodataConverter";
 import riverData from "./river.json";
+import riverSurrounding from "./riverSurrounding.json";
 import { CoordinatesNormalizer } from "./utils/coordinatesNormalizer";
 import { River } from "./objects/river";
 import { Land } from "./objects/land";
@@ -10,6 +11,9 @@ import { Boat } from "./objects/boat";
 import { Sky } from "./objects/sky";
 import { Camera } from "./objects/camera";
 import { RiverTiling } from "./utils/riverTiling";
+import { SceneLoader } from "@babylonjs/core";
+import { Forest } from "./objects/forest";
+import { Village } from "./objects/village";
 
 class App {
     constructor() {
@@ -19,16 +23,19 @@ class App {
         canvas.id = "gameCanvas";
         document.body.appendChild(canvas);
 
-        const dataParser = new RiverGeodataParser();
-        let path = dataParser.getRiverGeodataFromGeojson(riverData);
+        const geodataConverter = new GeodataConverter();
+        let path = geodataConverter.getRiverGeodataFromGeojson(riverData);
 
         let { width, height } =
             CoordinatesNormalizer.calculateNormalizationParameters(path);
 
+        const origin = { x: path[0][0], z: path[0][2] };
+
         let riverPath =
             CoordinatesNormalizer.recalculateCoordinatesRelativeToOrigin(
                 path,
-                10
+                10,
+                origin
             );
 
         width = width / 10;
@@ -70,6 +77,56 @@ class App {
                 .withGrassMaterial()
                 .applyHeightMap(renderRiverPath, 10, 2),
         ];
+
+        // TODO: Render villages and forests on tiles
+        let forestsToRender = 5;
+        let villagesToRender = 5;
+        SceneLoader.ImportMeshAsync("", "low_poly_tree.glb", "", scene).then(
+            (result) => {
+                const treeMeshes = result.meshes;
+                const treeMesh = treeMeshes[0];
+
+                SceneLoader.ImportMeshAsync(
+                    "",
+                    "fantasy_house_low_poly.glb",
+                    "",
+                    scene
+                ).then((result) => {
+                    const houseMeshes = result.meshes;
+                    const houseMesh = houseMeshes[0];
+
+                    riverSurrounding.forEach((surrounding) => {
+                        if (
+                            surrounding["type"] == "allotments" ||
+                            surrounding["type"] == "village"
+                        ) {
+                            if (villagesToRender <= 0) {
+                                return;
+                            }
+                            new Village(surrounding, origin, houseMesh);
+                            villagesToRender--;
+                        }
+
+                        if (surrounding["type"] == "forest") {
+                            if (forestsToRender <= 0) {
+                                return;
+                            }
+
+                            new Forest(surrounding, origin, treeMesh);
+                            forestsToRender--;
+                        }
+                    });
+
+                    houseMeshes.forEach((mesh) => {
+                        mesh.dispose();
+                    });
+
+                    treeMeshes.forEach((mesh) => {
+                        mesh.dispose();
+                    });
+                });
+            }
+        );
 
         const { x: startX, z: startZ } = renderRiverPath[0];
 

@@ -45,12 +45,31 @@ export class CoordinatesNormalizer {
         });
     }
 
-    static recalculateCoordinatesRelativeToOrigin(coordinates: any[], scale) {
-        const [xOrigin, yOrigin, zOrigin] = coordinates[0];
-
+    static recalculateCoordinatesRelativeToOrigin(
+        coordinates: any[],
+        scale: number,
+        origin: { x: number; z: number }
+    ) {
         return coordinates.map((coord) => {
             const [x, y, z] = coord;
-            return { x: (x - xOrigin) / scale, y: 0, z: (z - zOrigin) / scale };
+            return {
+                x: (x - origin.x) / scale,
+                y: 0,
+                z: (z - origin.z) / scale,
+            };
         });
+    }
+
+    static recalculateCoordinateRelativeToOrigin(
+        coordinate: any[],
+        scale: number,
+        origin: { x: number; z: number }
+    ) {
+        const [x, y, z] = coordinate;
+        return {
+            x: (x - origin.x) / scale,
+            y: 0,
+            z: (z - origin.z) / scale,
+        };
     }
 }
