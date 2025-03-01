@@ -17,10 +17,22 @@ export class Camera {
         this.camera.keysDown = [];
         this.camera.keysLeft = [];
         this.camera.keysRight = [];
+
+        this.camera.noRotationConstraint = false;
+        this.camera.upperBetaLimit = rad * 63;
+        this.camera.lowerBetaLimit = rad * 60;
     }
 
     setTarget(target: Vector3) {
         this.camera.setTarget(target);
+    }
+
+    getCameraRotation() {
+        return this.camera.rotation;
+    }
+
+    setCameraXRotation(x: number) {
+        this.camera.rotation.x = x;
     }
 
     private camera: ArcRotateCamera;
