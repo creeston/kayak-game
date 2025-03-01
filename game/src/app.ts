@@ -133,13 +133,6 @@ class App {
         const boat = new Boat(scene, 2, 4).atRiverPosition(startX, startZ);
         const camera = new Camera(scene, canvas, boat.position);
 
-        // on key up increase boat speed
-        window.addEventListener("keyup", (event) => {
-            if (event.key === "ArrowUp") {
-                boat.accelerate();
-            }
-        });
-
         let currentRiverPointIndex = 0;
         let renderedTiles = new Set<string>();
         engine.runRenderLoop(() => {
