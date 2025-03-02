@@ -1,14 +1,12 @@
 import {
     Color3,
-    GroundMesh,
     MeshBuilder,
     StandardMaterial,
-    Texture,
     VertexBuffer,
 } from "@babylonjs/core";
-import { GrassProceduralTexture } from "@babylonjs/procedural-textures";
+import { DestroyableMesh } from "../contracts/destroyableMesh";
 
-export class Land {
+export class Land implements DestroyableMesh {
     constructor(scene, landWidth, landHeight) {
         this.ground = MeshBuilder.CreateGround(
             "land",
@@ -29,19 +27,6 @@ export class Land {
     }
 
     withGrassMaterial() {
-        // this.ground.material = new StandardMaterial("grass", this.scene);
-        // var grassTexture = new GrassProceduralTexture(
-        //     "grassTex",
-        //     256 * 50,
-        //     this.scene
-        // );
-
-        // this.ground.material.ambientTexture = grassTexture;
-
-        // // do not reflect light that much
-        // this.ground.material.specularColor = new Color3(0.1, 0.1, 0.1);
-        // this.ground.material.diffuseColor = new Color3(0.8, 0.8, 0.8);
-
         const groundMaterial = new StandardMaterial("groundMat", this.scene);
         this.ground.material = groundMaterial;
         this.ground.material.specularColor = new Color3(0.1, 0.1, 0.1);
@@ -90,21 +75,6 @@ export class Land {
                 }
             }
         }
-
-        // // Lower terrain vertices near the river path
-        // for (let i = 0; i < positions.length; i += 3) {
-        //     let vx = positions[i];
-        //     let vz = positions[i + 2];
-
-        //     for (const point of riverPath) {
-        //         const [x, y, z] = point;
-        //         let distance = Math.abs(x - vx) + Math.abs(z - vz); // Manhattan distance
-        //         if (distance < riverWidth) {
-        //             let depthFactor = 1 - distance / riverWidth; // Closer to center = deeper
-        //             positions[i + 1] -= riverDepth * depthFactor; // Lower Y coordinate
-        //         }
-        //     }
-        // }
 
         this.ground.updateVerticesData(VertexBuffer.PositionKind, positions);
         this.ground.convertToFlatShadedMesh();

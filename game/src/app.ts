@@ -6,25 +6,31 @@ import riverData from "./river.json";
 import riverSurrounding from "./riverSurrounding.json";
 import { CoordinatesNormalizer } from "./utils/coordinatesNormalizer";
 import { River } from "./objects/river";
-import { Land } from "./objects/land";
 import { Boat } from "./objects/boat";
 import { Sky } from "./objects/sky";
 import { Camera } from "./objects/camera";
 import { RiverTiling } from "./utils/riverTiling";
 import { SceneLoader } from "@babylonjs/core";
-import { Forest } from "./objects/forest";
-import { Village } from "./objects/village";
+import { Environment } from "./objects/environment";
+import { RiverEnvironmentElement } from "./models/riverEnvironment";
 
 class App {
-    constructor() {
-        var canvas = document.createElement("canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.id = "gameCanvas";
-        document.body.appendChild(canvas);
+    private canvas: HTMLCanvasElement;
+    private geodataConverter: GeodataConverter;
+    private engine: Engine;
+    private scene: Scene;
 
-        const geodataConverter = new GeodataConverter();
-        let path = geodataConverter.getRiverGeodataFromGeojson(riverData);
+    constructor() {
+        this.canvas = document.getElementById(
+            "gameCanvas"
+        ) as HTMLCanvasElement;
+        this.geodataConverter = new GeodataConverter();
+        this.engine = new Engine(this.canvas, true);
+        this.scene = new Scene(this.engine);
+    }
+
+    async start() {
+        let path = this.geodataConverter.getRiverGeodataFromGeojson(riverData);
 
         let { width, height } =
             CoordinatesNormalizer.calculateNormalizationParameters(path);
@@ -51,93 +57,95 @@ class App {
 
         const renderRiverPath = riverPath;
 
-        var engine = new Engine(canvas, true);
-        var scene = new Scene(engine);
+        riverSurrounding.forEach((surrounding: RiverEnvironmentElement) => {
+            if (surrounding.location) {
+                const location = this.geodataConverter.convertCoordinates(
+                    surrounding.location[0],
+                    surrounding.location[1]
+                );
+                const point =
+                    CoordinatesNormalizer.recalculateCoordinateRelativeToOrigin(
+                        location,
+                        10,
+                        origin
+                    );
 
-        var light: HemisphericLight = new HemisphericLight(
-            "light1",
-            new Vector3(0, 1, 0),
-            scene
-        );
+                surrounding.location = [point.x, point.z];
+            }
 
-        light.intensity = 0.7;
+            if (surrounding.shape) {
+                const shape = surrounding.shape.map((coords) =>
+                    this.geodataConverter.convertCoordinates(
+                        coords[0],
+                        coords[1]
+                    )
+                );
+                const convertedShape =
+                    CoordinatesNormalizer.recalculateCoordinatesRelativeToOrigin(
+                        shape,
+                        10,
+                        origin
+                    );
 
-        const sky = new Sky(
-            scene,
+                surrounding.shape = convertedShape.map((point) => [
+                    point.x,
+                    point.z,
+                ]);
+            }
+        });
+
+        new HemisphericLight("light1", new Vector3(0, 1, 0), this.scene);
+
+        new Sky(
+            this.scene,
             Math.floor(width) + 500,
             500,
             Math.floor(height) + 500
         ).atPosition(
             new Vector3(Math.floor(width) / 2, 0, -Math.floor(height) / 2)
         );
-        new River(scene, renderRiverPath, 20);
+        new River(this.scene, renderRiverPath, 20);
 
-        let renderedLands: Land[] = [
-            new Land(scene, tileSize, tileSize)
-                .withGrassMaterial()
-                .applyHeightMap(renderRiverPath, 10, 2),
-        ];
-
-        // TODO: Render villages and forests on tiles
-        let forestsToRender = 5;
-        let villagesToRender = 5;
-        SceneLoader.ImportMeshAsync("", "low_poly_tree.glb", "", scene).then(
-            (result) => {
-                const treeMeshes = result.meshes;
-                const treeMesh = treeMeshes[0];
-
-                SceneLoader.ImportMeshAsync(
-                    "",
-                    "fantasy_house_low_poly.glb",
-                    "",
-                    scene
-                ).then((result) => {
-                    const houseMeshes = result.meshes;
-                    const houseMesh = houseMeshes[0];
-
-                    riverSurrounding.forEach((surrounding) => {
-                        if (
-                            surrounding["type"] == "allotments" ||
-                            surrounding["type"] == "village"
-                        ) {
-                            if (villagesToRender <= 0) {
-                                return;
-                            }
-                            new Village(surrounding, origin, houseMesh);
-                            villagesToRender--;
-                        }
-
-                        if (surrounding["type"] == "forest") {
-                            if (forestsToRender <= 0) {
-                                return;
-                            }
-
-                            new Forest(surrounding, origin, treeMesh);
-                            forestsToRender--;
-                        }
-                    });
-
-                    houseMeshes.forEach((mesh) => {
-                        mesh.dispose();
-                    });
-
-                    treeMeshes.forEach((mesh) => {
-                        mesh.dispose();
-                    });
-                });
-            }
+        const treeMeshesResult = await SceneLoader.ImportMeshAsync(
+            "",
+            "low_poly_tree.glb",
+            "",
+            this.scene
         );
+        const houseMeshesResult = await SceneLoader.ImportMeshAsync(
+            "",
+            "fantasy_house_low_poly.glb",
+            "",
+            this.scene
+        );
+        const treeMeshes = treeMeshesResult.meshes;
+        const treeMesh = treeMeshes[0];
+        treeMesh.setEnabled(false);
+        const houseMeshes = houseMeshesResult.meshes;
+        const houseMesh = houseMeshes[0];
+        houseMesh.setEnabled(false);
+
+        let renderedLands: Environment[] = [
+            new Environment(
+                this.scene,
+                treeMesh,
+                houseMesh,
+                tileSize,
+                riverSurrounding,
+                renderRiverPath
+            ).render(0, 0),
+        ];
 
         const { x: startX, z: startZ } = renderRiverPath[0];
 
-        const boat = new Boat(scene, 2, 4).atRiverPosition(startX, startZ);
-        const camera = new Camera(scene, canvas, boat.position);
+        const boat = new Boat(this.scene, 1, 4).atRiverPosition(startX, startZ);
+        const camera = new Camera(this.scene, this.canvas, boat.position);
 
         let currentRiverPointIndex = 0;
         let renderedTiles = new Set<string>();
-        engine.runRenderLoop(() => {
+        this.engine.runRenderLoop(() => {
             if (currentRiverPointIndex >= renderRiverPath.length - 2) {
-                scene.render();
+                this.scene.render();
                 return;
             }
 
@@ -167,22 +175,29 @@ class App {
             for (const point of nextPoints) {
                 const key = `${point.x}_${point.z}`;
                 const tilesContainingPoint = riverToTiles.get(key);
-                if (tilesContainingPoint) {
-                    tilesContainingPoint.forEach((tile) => {
-                        const tileKey = `${tile.x}_${tile.z}`;
-                        if (!renderedTiles.has(tileKey)) {
-                            const riverPoints = tileToRiverPoints.get(tileKey);
-                            const { x, z, cz, cx } = tile;
-                            renderedLands.push(
-                                new Land(scene, tileSize, tileSize)
-                                    .withGrassMaterial()
-                                    .atPosition(cx, cz)
-                                    .applyHeightMap(riverPoints, 10, 2)
-                            );
-                            renderedTiles.add(tileKey);
-                        }
-                    });
+                if (!tilesContainingPoint) {
+                    continue;
                 }
+                tilesContainingPoint.forEach((tile) => {
+                    const tileKey = `${tile.x}_${tile.z}`;
+                    if (renderedTiles.has(tileKey)) {
+                        // Tile already rendered
+                        return;
+                    }
+                    const riverPoints = tileToRiverPoints.get(tileKey);
+                    const { cz, cx } = tile;
+                    renderedLands.push(
+                        new Environment(
+                            this.scene,
+                            treeMesh,
+                            houseMesh,
+                            tileSize,
+                            riverSurrounding,
+                            riverPoints
+                        ).render(cx, cz)
+                    );
+                    renderedTiles.add(tileKey);
+                });
             }
 
             if (renderedLands.length > 80) {
@@ -193,8 +208,9 @@ class App {
                 renderedLands = renderedLands.slice(20);
             }
 
-            scene.render();
+            this.scene.render();
         });
     }
 }
-new App();
+
+new App().start();

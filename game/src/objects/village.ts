@@ -1,31 +1,20 @@
 import { Vector3 } from "@babylonjs/core";
-import { CoordinatesNormalizer } from "../utils/coordinatesNormalizer";
-import { GeodataConverter } from "../utils/geodataConverter";
+import { RiverEnvironmentElement } from "../models/riverEnvironment";
+import { DestroyableMesh } from "../contracts/destroyableMesh";
 
-export class Village {
-    constructor(villageData, origin, houseMesh) {
-        const geodataConverter = new GeodataConverter();
-        const villageLocation = geodataConverter.convertCoordinates(
-            villageData["location"][0],
-            villageData["location"][1]
-        );
-        const point =
-            CoordinatesNormalizer.recalculateCoordinateRelativeToOrigin(
-                villageLocation,
-                10,
-                origin
-            );
-
-        this.createVillage(point, houseMesh);
+export class Village implements DestroyableMesh {
+    constructor(villageData: RiverEnvironmentElement, houseMesh) {
+        this.createVillage(villageData.location, houseMesh);
     }
 
     createVillage(point, houseMesh) {
         const house = houseMesh.clone("house", null);
-        house.position = new Vector3(point.x, point.y, point.z);
+        house.position = new Vector3(point[0], 0, point[1]);
+        house.setEnabled(true);
         this.house = house;
     }
 
-    destroy() {
+    dispose() {
         this.house.dispose();
     }
 

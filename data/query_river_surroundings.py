@@ -21,7 +21,7 @@ degree_tolerance = 0.01
 simplified_path = simplify_coords(river_path, degree_tolerance) 
 
 
-def build_query(lat, lon, radius=1500):
+def build_query(lat, lon, radius=1000):
     return f"""
     [out:json][timeout:60];
     node({lon}, {lat}, {lon}, {lat})->.center;
@@ -40,7 +40,7 @@ def query_overpass(query):
 
 all_results = []
 added_elements = set()
-for lat, lon in simplified_path[:10]:
+for lat, lon in simplified_path[:100]:
     query = build_query(lat, lon)
     result = query_overpass(query)
     elements = result['elements']
