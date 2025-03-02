@@ -7,6 +7,8 @@ import {
     HemisphericLight,
     ActionManager,
     ExecuteCodeAction,
+    Animation,
+    Quaternion,
 } from "@babylonjs/core";
 import { GeodataConverter } from "./utils/geodataConverter";
 import riverData from "./river.json";
@@ -114,12 +116,36 @@ class App {
             "",
             this.scene
         );
+        const boatMeshesResult = await SceneLoader.ImportMeshAsync(
+            "",
+            "boat-animated.glb",
+            "",
+            this.scene
+        );
         const treeMeshes = treeMeshesResult.meshes;
         const treeMesh = treeMeshes[0];
         treeMesh.setEnabled(false);
         const houseMeshes = houseMeshesResult.meshes;
         const houseMesh = houseMeshes[0];
         houseMesh.setEnabled(false);
+        const boatMeshes = boatMeshesResult.meshes;
+        const boatMesh = boatMeshes[0];
+
+        this.scene.animationGroups.forEach((anim) => anim.stop());
+
+        const boatLeftPaddle = boatMeshes[5];
+        const boatLeftPaddleNode = boatMeshes[5].parent;
+        const boatRightPaddle = boatMeshes[6].parent;
+
+        boatLeftPaddle.setEnabled(true);
+        boatRightPaddle.setEnabled(true);
+
+        const leftPaddleAnim = this.scene.animationGroups.find(
+            (group) => group.name === "LeftPaddleSwim"
+        );
+        const rightPaddleAnim = this.scene.animationGroups.find(
+            (group) => group.name === "RightPaddleSwim"
+        );
 
         new HemisphericLight("light1", new Vector3(0, 1, 0), this.scene);
 
@@ -132,9 +158,16 @@ class App {
             new Vector3(Math.floor(width) / 2, 0, -Math.floor(height) / 2)
         );
 
-        new River(this.scene, renderRiverPath, 20);
         const riverPoints = tileToRiverPoints.get("0_0");
         const physicsWorld = new CANNON.World();
+        // physicsWorld.gravity.set(0, -9.82, 0);
+
+        const river = new River(
+            this.scene,
+            renderRiverPath,
+            20,
+            physicsWorld
+        ).createRiver();
 
         let renderedLands: Environment[] = [
             new Environment(
@@ -150,7 +183,9 @@ class App {
 
         const { x: startX, z: startZ } = renderRiverPath[0];
 
-        const boat = new Boat(this.scene, 1, 4).atRiverPosition(startX, startZ);
+        const boat = new Boat(this.scene)
+            .fromExistingMesh(boatMesh)
+            .atRiverPosition(startX, startZ);
 
         // physicsWorld.gravity.set(0, -9.82, 0);
 
@@ -195,6 +230,7 @@ class App {
         const dragCoefficient = 0.5;
 
         // on key left and right turn the boat
+        const sceneInstance = this.scene;
         this.scene.actionManager = new ActionManager(this.scene);
         this.scene.actionManager.registerAction(
             new ExecuteCodeAction(ActionManager.OnKeyDownTrigger, function (
@@ -208,9 +244,12 @@ class App {
                     // Apply force to the boat in the direction of the boat's forward vector
                     const foward = boat.forward;
                     const force = new CANNON.Vec3(foward.x, 0, foward.z).scale(
-                        10
+                        50
                     );
                     boatBody.applyForce(force, boatBody.position);
+
+                    leftPaddleAnim.start(false, 3);
+                    rightPaddleAnim.start(false, 3);
                 } else if (evt.sourceEvent.key == "ArrowDown") {
                     // Apply force to the boat in the direction opposite to the boat's forward vector
                     const foward = boat.forward;

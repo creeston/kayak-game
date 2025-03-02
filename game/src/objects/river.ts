@@ -1,15 +1,22 @@
-import { Color3, Mesh, StandardMaterial, VertexData } from "@babylonjs/core";
+import {
+    Color3,
+    Mesh,
+    Plane,
+    StandardMaterial,
+    VertexData,
+} from "@babylonjs/core";
+import * as CANNON from "cannon";
 
 export class River {
     constructor(
         scene: any,
         riverPath: { x: number; z: number }[],
-        riverWidth: number
+        riverWidth: number,
+        private physicsWorld: any
     ) {
         this.scene = scene;
         this.riverPath = riverPath;
         this.riverWidth = riverWidth;
-        this.createRiver();
     }
 
     createRiver() {
@@ -73,6 +80,7 @@ export class River {
         riverMesh.material = riverMaterial;
     }
 
+    private riverMesh: any;
     private scene: any;
     private riverPath: { x: number; z: number }[];
     private riverWidth: number;

@@ -1,14 +1,31 @@
-import { Mesh, MeshBuilder, Vector3 } from "@babylonjs/core";
+import { AbstractMesh, Mesh, MeshBuilder, Vector3 } from "@babylonjs/core";
 
 export class Boat {
-    constructor(scene, boathWidth: number, boatLength: number) {
+    private scene: any;
+    private boat: AbstractMesh;
+
+    private target: Vector3;
+    private intermediatePoints: Vector3[] = [];
+    private currentIntermediatePointIndex = -1;
+    private speed: number;
+
+    constructor(scene) {
         this.scene = scene;
+        this.speed = 0.3;
+    }
+
+    fromExistingMesh(mesh: AbstractMesh) {
+        this.boat = mesh;
+        return this;
+    }
+
+    fromBox(boathWidth: number, boatLength: number) {
         this.boat = MeshBuilder.CreateBox(
             "boat",
             { width: boathWidth, height: 1, depth: boatLength },
-            scene
+            this.scene
         );
-        this.speed = 0.3;
+        return this;
     }
 
     setSpeed(speed: number) {
@@ -28,6 +45,7 @@ export class Boat {
     atRiverPosition(x: number, z: number) {
         this.boat.position.x = x;
         this.boat.position.z = z;
+        this.boat.position.y = -1.3;
         return this;
     }
 
@@ -208,12 +226,4 @@ export class Boat {
     get forward() {
         return this.boat.forward;
     }
-
-    private scene: any;
-    private boat: Mesh;
-
-    private target: Vector3;
-    private intermediatePoints: Vector3[] = [];
-    private currentIntermediatePointIndex = -1;
-    private speed: number;
 }
