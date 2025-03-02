@@ -19,11 +19,17 @@ export class Environment implements DestroyableMesh {
         private houseMeshTemplate: AbstractMesh,
         private width: number,
         private environmentData: RiverEnvironment,
-        private riverPath: { x: number; z: number }[]
+        private riverPath: { x: number; z: number }[],
+        private physicsWorld: any
     ) {}
 
     render(x: number, z: number) {
-        const land = new Land(this.scene, this.width, this.width)
+        const land = new Land(
+            this.scene,
+            this.width,
+            this.width,
+            this.physicsWorld
+        )
             .withGrassMaterial()
             .atPosition(x, z)
             .applyHeightMap(this.riverPath, 10, 2);

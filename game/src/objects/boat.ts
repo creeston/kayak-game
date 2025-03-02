@@ -1,4 +1,4 @@
-import { MeshBuilder, Vector3 } from "@babylonjs/core";
+import { Mesh, MeshBuilder, Vector3 } from "@babylonjs/core";
 
 export class Boat {
     constructor(scene, boathWidth: number, boatLength: number) {
@@ -76,6 +76,19 @@ export class Boat {
                 this.boat.lookAt(lookAtPoint);
             }
         }
+    }
+
+    lookAt(x: number, z: number) {
+        const lookAtPoint = new Vector3(x, 0, z);
+        this.boat.lookAt(lookAtPoint);
+    }
+
+    turnLeft() {
+        this.boat.rotate(Vector3.Up(), Math.PI / 90);
+    }
+
+    turnRight() {
+        this.boat.rotate(Vector3.Up(), -Math.PI / 90);
     }
 
     interpolatePointsBetween(point1: Vector3, point2: Vector3, steps: number) {
@@ -192,8 +205,12 @@ export class Boat {
         return this.boat.position;
     }
 
+    get forward() {
+        return this.boat.forward;
+    }
+
     private scene: any;
-    private boat: any;
+    private boat: Mesh;
 
     private target: Vector3;
     private intermediatePoints: Vector3[] = [];
